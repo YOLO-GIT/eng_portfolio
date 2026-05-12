@@ -1,81 +1,182 @@
-import './style.css'
+// import './style.css'
+import './custom_css/custom.css'
 
 import Matter from 'matter-js'
 
-const {
-  Engine,
-  Render,
-  Runner,
-  Bodies,
-  Composite,
-  Mouse,
-  MouseConstraint
-} = Matter
+import {
+  engine,
+  render,
+  runner,
 
-// Create engine
-const engine = Engine.create()
+} from './physics/engine'
 
-// Create renderer
-const render = Render.create({
-  element: document.body,
-  engine: engine,
-  options: {
-    width: 800,
-    height: 600,
-    wireframes: false,
-    background: '#111',
-  }
+import {
+  createBalls
+} from './entities/balls'
+
+import {
+  setupWorld
+} from './physics/world'
+
+import {
+  addMouseControl
+} from './physics/controls'
+
+import {
+  updateStats
+} from './ui/stats'
+
+import {
+  createCage
+} from './entities/cage'
+
+const velocityInput =
+  document.getElementById('velocityInput')
+
+const launchBtn =
+  document.getElementById('launchBtn')
+
+const resetBtn =
+  document.getElementById('resetBtn')
+
+const velocityText =
+  document.getElementById('velocityText')
+
+const momentumText =
+  document.getElementById('momentumText')
+
+const spawnCageBtn =
+  document.getElementById('spawnCageBtn')
+
+// Update your initial setup
+let balls = createBalls()
+let ball1 = balls[0]
+let ball2 = balls[1]
+
+setupWorld(engine, balls)
+
+// Mouse control
+addMouseControl(engine, render)
+
+// Launch button
+launchBtn.addEventListener('click', () => {
+
+  const velocity =
+    Number(velocityInput.value)
+
+  const mass1 =
+    Number(mass1Input.value)
+
+  const mass2 =
+    Number(mass2Input.value)
+
+  Matter.Body.setMass(ball1, mass1)
+  Matter.Body.setMass(ball2, mass2)
+
+  Matter.Body.setVelocity(ball1, {
+    x: velocity,
+    y: 0
+  })
+
 })
 
-// Create floor
-const ground = Bodies.rectangle(
-  400,
-  580,
-  810,
-  60,
-  {
-    isStatic: true,
-    render: {
-      fillStyle: '#444'
-    }
-  }
-)
+// Reset button
+resetBtn.addEventListener('click', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
 
-// Create boxes
-for (let i = 0; i < 8; i++) {
-  const box = Bodies.rectangle(
-    200 + i * 40,
-    100,
-    40,
-    40,
-    {
-      render: {
-        fillStyle: '#00bfff'
-      }
-    }
+  // Reset Ball 1 (Match the logic in your createBalls function)
+  Matter.Body.setPosition(ball1, { x: w * 0.7, y: h * 0.4 });
+  Matter.Body.setVelocity(ball1, { x: 0, y: 0 });
+  Matter.Body.setAngularVelocity(ball1, 0);
+
+  // Reset Ball 2
+  Matter.Body.setPosition(ball2, { x: w * 0.8, y: h * 0.5 });
+  Matter.Body.setVelocity(ball2, { x: 0, y: 0 });
+  Matter.Body.setAngularVelocity(ball2, 0);
+
+  collisionText.innerText = 'Collision Status: Waiting...';
+});
+
+
+spawnCageBtn.addEventListener('click', () => {
+  createCage(engine)
+})
+
+// Stats Update
+Matter.Events.on(engine, 'collisionStart', () => {
+  collisionText.innerText =
+    'Collision Status: COLLIDED!'
+})
+
+// Update stats
+Matter.Events.on(engine, 'afterUpdate', () => {
+
+  updateStats(
+    ball1,
+    velocityText,
+    momentumText,
+    energyText
   )
 
-  Composite.add(engine.world, box)
-}
+})
+// Stats Update end
 
-// Add ground
-Composite.add(engine.world, ground)
+// engine.gravity.y = 0
 
-// Mouse drag
-const mouse = Mouse.create(render.canvas)
+// UI Elements
+const collisionText =
+  document.getElementById('collisionText')
 
-const mouseConstraint = MouseConstraint.create(
-  engine,
-  {
-    mouse: mouse
+const mass1Input =
+  document.getElementById('mass1Input')
+
+const mass2Input =
+  document.getElementById('mass2Input')
+// UI Elements end
+
+// Settings panel toggle
+const toggleSettingsBtn =
+  document.getElementById('toggleSettingsBtn')
+
+const settingsPanel =
+  document.getElementById('settingsPanel')
+
+let settingsVisible = true
+
+toggleSettingsBtn.addEventListener('click', () => {
+
+  settingsVisible =
+    !settingsVisible
+
+  settingsPanel.classList.toggle(
+    'hidden'
+  )
+
+  toggleSettingsBtn.innerText =
+    settingsVisible
+      ? 'Hide'
+      : 'Show'
+
+})
+// Settings panel toggle end
+
+window.addEventListener('resize', () => {
+  // 1. Update Canvas
+  render.canvas.width = window.innerWidth;
+  render.canvas.height = window.innerHeight;
+
+  // 2. Update Ground (assuming you labeled it 'ground' in world.js)
+  const ground = engine.world.bodies.find(b => b.label === 'ground');
+  if (ground) {
+    Matter.Body.setPosition(ground, {
+      x: window.innerWidth / 2,
+      y: window.innerHeight - 30
+    });
   }
-)
+});
 
-Composite.add(engine.world, mouseConstraint)
 
-// Run renderer
-Render.run(render)
-
-// Run engine
-const runner = Runner.create()
-Runner.run(runner, engine)
+// Run app
+Matter.Render.run(render)
+Matter.Runner.run(runner, engine)
