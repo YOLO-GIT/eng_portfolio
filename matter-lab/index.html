@@ -10,6 +10,80 @@
 
 <body>
   <!-- <div id="app"></div> -->
+  <!-- Control Panel -->
+  <div id="ui">
+
+    <!-- UI Header -->
+    <div id="uiHeader">
+
+      <h1>Ball Collision Analyzer</h1>
+
+      <button id="toggleSettingsBtn">
+        Hide
+      </button>
+
+    </div>
+    <!-- Settings Panel -->
+    <div id="settingsPanel">
+      <!-- Balls Settings -->
+      <label>
+        Ball 1 Velocity
+      </label>
+
+      <input id="velocityInput" type="number" value="10">
+
+      <label>
+        Ball 1 Mass
+      </label>
+
+      <input id="mass1Input" type="number" value="5">
+
+      <label>
+        Ball 2 Mass
+      </label>
+
+      <input id="mass2Input" type="number" value="10">
+      <!-- Buttons -->
+      <div class="buttonGroup">
+
+        <button id="launchBtn">
+          Launch
+        </button>
+
+        <button id="resetBtn">
+          Reset
+        </button>
+
+        <button id="spawnCageBtn">
+          Spawn Cage
+        </button>
+
+      </div>
+
+      <hr>
+      <!-- Text Display -->
+      <h2>Physics Data</h2>
+
+      <p id="velocityText">
+        Velocity: 0
+      </p>
+
+      <p id="momentumText">
+        Momentum: 0
+      </p>
+
+      <p id="energyText">
+        Kinetic Energy: 0
+      </p>
+
+      <p id="collisionText">
+        Collision Status: Waiting...
+      </p>
+
+    </div>
+
+  </div>
+
   <script type="module" src="/src/main.js"></script>
 </body>
 
