@@ -26,10 +26,6 @@ import {
   updateStats
 } from './ui/stats'
 
-import {
-  createCage
-} from './entities/cage'
-
 const velocityInput =
   document.getElementById('velocityInput')
 
@@ -45,8 +41,6 @@ const velocityText =
 const momentumText =
   document.getElementById('momentumText')
 
-const spawnCageBtn =
-  document.getElementById('spawnCageBtn')
 
 // Update your initial setup
 let balls = createBalls()
@@ -97,11 +91,6 @@ resetBtn.addEventListener('click', () => {
 
   collisionText.innerText = 'Collision Status: Waiting...';
 });
-
-
-spawnCageBtn.addEventListener('click', () => {
-  createCage(engine)
-})
 
 // Stats Update
 Matter.Events.on(engine, 'collisionStart', () => {
@@ -175,6 +164,29 @@ window.addEventListener('resize', () => {
     });
   }
 });
+
+window.addEventListener('resize', () => {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const thickness = 100;
+
+  // Find our specific walls by label and snap them to new edges
+  const bodies = engine.world.bodies;
+
+  const ground = bodies.find(b => b.label === 'bound-ground');
+  const ceiling = bodies.find(b => b.label === 'bound-ceiling');
+  const left = bodies.find(b => b.label === 'bound-left');
+  const right = bodies.find(b => b.label === 'bound-right');
+
+  if (ground) Body.setPosition(ground, { x: w / 2, y: h + thickness / 2 });
+  if (ceiling) Body.setPosition(ceiling, { x: w / 2, y: -thickness / 2 });
+  if (left) Body.setPosition(left, { x: -thickness / 2, y: h / 2 });
+  if (right) Body.setPosition(right, { x: w + thickness / 2, y: h / 2 });
+
+  // Also resize the ground width if necessary
+  // Body.scale(ground, w / oldW, 1); 
+});
+
 
 
 // Run app
