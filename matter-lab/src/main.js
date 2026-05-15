@@ -7,7 +7,6 @@ import {
   engine,
   render,
   runner,
-
 } from './physics/engine'
 
 import {
@@ -26,6 +25,15 @@ import {
   updateStats
 } from './ui/stats'
 
+import {
+  drawVelocityArrow
+} from './ui/velocityArrows'
+
+import {
+  calculateMomentum,
+  calculateKE
+} from './utils/physics'
+
 const velocityInput =
   document.getElementById('velocityInput')
 
@@ -41,6 +49,34 @@ const velocityText =
 const momentumText =
   document.getElementById('momentumText')
 
+const pauseBtn =
+  document.getElementById('pauseBtn')
+
+const resumeBtn =
+  document.getElementById('resumeBtn')
+
+const slowmoBtn =
+  document.getElementById('slowmoBtn')
+
+const normalSpeedBtn =
+  document.getElementById('normalSpeedBtn')
+
+const zeroGravityBtn =
+  document.getElementById('zeroGravityBtn')
+
+const GravityBtn = document.getElementById('GravityBtn')
+
+const beforeMomentum =
+  document.getElementById('beforeMomentum')
+
+const afterMomentum =
+  document.getElementById('afterMomentum')
+
+const beforeKE =
+  document.getElementById('beforeKE')
+
+const afterKE =
+  document.getElementById('afterKE')
 
 // Update your initial setup
 let balls = createBalls()
@@ -51,6 +87,9 @@ setupWorld(engine, balls)
 
 // Mouse control
 addMouseControl(engine, render)
+
+let initialMomentum = 0
+let initialKE = 0
 
 // Launch button
 launchBtn.addEventListener('click', () => {
@@ -72,6 +111,14 @@ launchBtn.addEventListener('click', () => {
     y: 0
   })
 
+  initialMomentum =
+    calculateMomentum(ball1) +
+    calculateMomentum(ball2)
+
+  initialKE =
+    calculateKE(ball1) +
+    calculateKE(ball2)
+
 })
 
 // Reset button
@@ -79,23 +126,61 @@ resetBtn.addEventListener('click', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Reset Ball 1 (Match the logic in your createBalls function)
-  Matter.Body.setPosition(ball1, { x: w * 0.7, y: h * 0.4 });
-  Matter.Body.setVelocity(ball1, { x: 0, y: 0 });
-  Matter.Body.setAngularVelocity(ball1, 0);
+  balls.forEach(ball => {
+    // Teleport to a random spot instead of a fixed one
+    Matter.Body.setPosition(ball, {
+      x: Math.random() * w,
+      y: Math.random() * h
+    });
 
-  // Reset Ball 2
-  Matter.Body.setPosition(ball2, { x: w * 0.8, y: h * 0.5 });
-  Matter.Body.setVelocity(ball2, { x: 0, y: 0 });
-  Matter.Body.setAngularVelocity(ball2, 0);
+    // Make them slightly different sizes every reset
+    const scale = 0.8 + Math.random() * 0.4;
+    Matter.Body.scale(ball, scale, scale);
 
-  collisionText.innerText = 'Collision Status: Waiting...';
+    // Change their color randomly (if you have access to the render style)
+    ball.render.fillStyle = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  });
+
+  collisionText.innerText = "Everything is new again. Or is it?";
 });
 
 // Stats Update
 Matter.Events.on(engine, 'collisionStart', () => {
+
   collisionText.innerText =
     'Collision Status: COLLIDED!'
+
+  const finalMomentum =
+    calculateMomentum(ball1) +
+    calculateMomentum(ball2)
+
+  const finalKE =
+    calculateKE(ball1) +
+    calculateKE(ball2)
+
+  beforeMomentum.innerText =
+    `Before Momentum: ${initialMomentum.toFixed(2)}`
+
+  afterMomentum.innerText =
+    `After Momentum: ${finalMomentum.toFixed(2)}`
+
+  beforeKE.innerText =
+    `Before KE: ${initialKE.toFixed(2)}`
+
+  afterKE.innerText =
+    `After KE: ${finalKE.toFixed(2)}`
+
+  const force = ball1.speed + ball2.speed;
+
+  if (force > 5) {
+    document.body.style.transition = '0.05s';
+    document.body.style.transform = `translate(${Math.random() * 20}px, ${Math.random() * 20}px)`;
+
+    setTimeout(() => {
+      document.body.style.transform = `translate(0, 0)`;
+    }, 50);
+  }
+
 })
 
 // Update stats
@@ -110,6 +195,24 @@ Matter.Events.on(engine, 'afterUpdate', () => {
 
 })
 // Stats Update end
+
+Matter.Events.on(render, 'afterRender', () => {
+
+  const context = render.context
+
+  drawVelocityArrow(
+    context,
+    ball1,
+    '#00bfff'
+  )
+
+  drawVelocityArrow(
+    context,
+    ball2,
+    '#ff6b6b'
+  )
+
+})
 
 // engine.gravity.y = 0
 
@@ -150,6 +253,15 @@ toggleSettingsBtn.addEventListener('click', () => {
 })
 // Settings panel toggle end
 
+//Buttons for pause, resume, slow motion, and normal speed
+pauseBtn.addEventListener('click', () => { Matter.Runner.stop(runner) })
+resumeBtn.addEventListener('click', () => { Matter.Runner.run(runner, engine) })
+slowmoBtn.addEventListener('click', () => { engine.timing.timeScale = 0.2 })
+normalSpeedBtn.addEventListener('click', () => { engine.timing.timeScale = 1 })
+zeroGravityBtn.addEventListener('click', () => { engine.gravity.y = 0 })
+GravityBtn.addEventListener('click', () => { engine.gravity.y = 1 }) // Reset to normal gravity
+// Buttons end  
+
 window.addEventListener('resize', () => {
   // 1. Update Canvas
   render.canvas.width = window.innerWidth;
@@ -168,6 +280,7 @@ window.addEventListener('resize', () => {
 window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
+  const Body = Matter.Body;
   const thickness = 100;
 
   // Find our specific walls by label and snap them to new edges
@@ -186,7 +299,6 @@ window.addEventListener('resize', () => {
   // Also resize the ground width if necessary
   // Body.scale(ground, w / oldW, 1); 
 });
-
 
 
 // Run app

@@ -62,7 +62,7 @@ body,
 /* Settings Panel */
 #settingsPanel {
     overflow: hidden;
-    max-height: 800px;
+    max-height: 1000px;
     /* Lowered for snappier animation */
     transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
 }
@@ -124,9 +124,13 @@ button:hover {
 
 /* Button Group */
 .buttonGroup {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
     gap: 10px;
+
     margin-top: 20px;
 }
 
