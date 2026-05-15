@@ -136,9 +136,6 @@ resetBtn.addEventListener('click', () => {
     // Make them slightly different sizes every reset
     const scale = 0.8 + Math.random() * 0.4;
     Matter.Body.scale(ball, scale, scale);
-
-    // Change their color randomly (if you have access to the render style)
-    ball.render.fillStyle = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
   });
 
   collisionText.innerText = "Everything is new again. Or is it?";
@@ -170,49 +167,64 @@ Matter.Events.on(engine, 'collisionStart', () => {
   afterKE.innerText =
     `After KE: ${finalKE.toFixed(2)}`
 
-  const force = ball1.speed + ball2.speed;
+  if (isCorrupted || !ball1 || !ball2) {
+    velocityText.innerText = "0";
+  } else {
+    const force = ball1.speed + ball2.speed;
 
-  if (force > 5) {
-    document.body.style.transition = '0.05s';
-    document.body.style.transform = `translate(${Math.random() * 20}px, ${Math.random() * 20}px)`;
+    if (force > 5) {
+      document.body.style.transition = '0.05s';
+      document.body.style.transform = `translate(${Math.random() * 20}px, ${Math.random() * 20}px)`;
 
-    setTimeout(() => {
-      document.body.style.transform = `translate(0, 0)`;
-    }, 50);
+      setTimeout(() => {
+        document.body.style.transform = `translate(0, 0)`;
+      }, 50);
+    }
   }
-
 })
 
 // Update stats
+// Locate this in your main.js
 Matter.Events.on(engine, 'afterUpdate', () => {
-
-  updateStats(
-    ball1,
-    velocityText,
-    momentumText,
-    energyText
-  )
-
-})
+  // ADD THIS LINE: If the world is corrupted, stop trying to update stats
+  if (isCorrupted || !ball1 || !ball2) {
+    velocityText.innerText = "0";
+    velocityText.innerText = console.log("N̸͓͖̻̬̄͗ő̷̧̲͚̘̗ț̴̦̺̰͆̆̏̽h̷̩̆̍́̈́̓i̴̬̫̩͚̳̾͐̈́̽̚n̴͇̍͊́̃ͅġ̴̊̂̏́ ̴͌̈́͊¤o̴½̀̌̉ƙ®¢͚ ̷͊̈́½̣s̸½̭͠uƜƜƜƜƜƜƜƜƜƜ");
+    velocityText.innerText = console.log("N̸͓͖̻̬̄͗ő̷̧̲͚̘̗ț̴̦̺̰͆̆̏̽h̷̩̆̍́̈́̓i̴̬̫̩͚̳̾͐̈́̽̚n̴͇̍͊́̃ͅġ̴̞͕̊̂̏́ ̴̢̰̅̈́̈́̇͑t̴̤̗̖͌̈́͊̕o̴̢͙̮͚̞̒̽̀̌̄ ̷̛̣͊̋̈́̽s̸̭̰̥̠̽̓͜͠ĕ̶͇͕̮̹̽̅̋͜ḛ̶̪̤̒͝͝ ̸̢̣̦͈̹̾̍̈͌h̸̩̣̭̿̃̋͐e̷̙̞͖̮̘̓͊͑̕r̶̬̂ë̴̬̉͜");
+    momentumText.innerText = console.log('ⱧɆⱠ₱');
+    energyText.innerText = console.log('ƂɌƂƂƂƂƂƂƂƂƂƂ');
+  } else {
+    updateStats(
+      ball1,
+      velocityText,
+      momentumText,
+      energyText
+    );
+  }
+});
 // Stats Update end
 
 Matter.Events.on(render, 'afterRender', () => {
+  const context = render.context;
 
-  const context = render.context
+  // Check if ball1 still exists before drawing the arrow
+  if (ball1 && ball1.position) {
+    drawVelocityArrow(
+      context,
+      ball1,
+      '#00bfff'
+    );
+  }
 
-  drawVelocityArrow(
-    context,
-    ball1,
-    '#00bfff'
-  )
-
-  drawVelocityArrow(
-    context,
-    ball2,
-    '#ff6b6b'
-  )
-
-})
+  // Check if ball2 still exists before drawing the arrow
+  if (ball2 && ball2.position) {
+    drawVelocityArrow(
+      context,
+      ball2,
+      '#ff6b6b'
+    );
+  }
+});
 
 // engine.gravity.y = 0
 
@@ -300,6 +312,114 @@ window.addEventListener('resize', () => {
   // Body.scale(ground, w / oldW, 1); 
 });
 
+// 1. Create the button properly first
+const voidBtn = document.getElementById('voidBtn');
+document.body.appendChild(voidBtn);
+
+let isCorrupted = false;
+
+// 2. Single Consolidated Event Listener
+voidBtn.addEventListener('click', () => {
+  if (isCorrupted) return;
+  isCorrupted = true;
+
+  // Inside your voidBtn listener...
+  Matter.World.clear(engine.world, false);
+  ball1 = null; // Tell the rest of the script ball1 is dead
+  ball2 = null; // Tell the rest of the script ball2 is dead
+
+  // --- VISUAL CORRUPTION ---
+  document.body.classList.add('corrupted');
+  // Force a heavy glitch filter via JS as well
+  document.body.style.filter = 'contrast(200%)';
+
+  // --- AUDIO: HEARTBEAT & DRONE ---
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  // Low Drone
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(40, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+
+  // Heartbeat Pulse
+  setInterval(() => {
+    const pOsc = audioCtx.createOscillator();
+    const pGain = audioCtx.createGain();
+    pOsc.type = 'sine';
+    pOsc.frequency.setValueAtTime(50, audioCtx.currentTime);
+    pGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    pGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+    pOsc.connect(pGain);
+    pGain.connect(audioCtx.destination);
+    pOsc.start();
+    pOsc.stop(audioCtx.currentTime + 0.5);
+  }, 1000);
+
+  // --- PHYSICS: THE SWARM ---
+  // Safely clear the world and invalidate the old balls
+  Matter.World.clear(engine.world, false);
+  ball1 = null;
+  ball2 = null;
+
+  for (let i = 0; i < 66; i++) {
+    const tooth = Matter.Bodies.polygon(
+      Math.random() * window.innerWidth,
+      Math.random() * window.innerHeight,
+      3, 5,
+      {
+        render: { fillStyle: '#880808' },
+        frictionAir: 0.05,
+        label: 'entity'
+      }
+    );
+    Matter.World.add(engine.world, tooth);
+
+    // Movement Logic: Use "Ghost Mouse" to avoid 'undefined' errors
+    Matter.Events.on(engine, 'beforeUpdate', () => {
+      const time = Date.now() * 0.002;
+      const ghostPos = {
+        x: (window.innerWidth / 2) + Math.cos(time + i) * 300,
+        y: (window.innerHeight / 2) + Math.sin(time + i) * 300
+      };
+
+      const force = 0.0003;
+      Matter.Body.applyForce(tooth, tooth.position, {
+        x: (ghostPos.x - tooth.position.x) * force,
+        y: (ghostPos.y - tooth.position.y) * force
+      });
+
+      // Subtle jitter
+      Matter.Body.setAngularVelocity(tooth, Math.random() * 0.1 - 0.05);
+    });
+  }
+
+  // --- UI VANDALISM ---
+  const allElements = document.querySelectorAll('h1, p, label, button, span');
+  const creepyMessages = ["IT HURTS", "STOP IT", "LEAKING", "HELP US", "01001000", "VOID"];
+
+  setInterval(() => {
+    const target = allElements[Math.floor(Math.random() * allElements.length)];
+    if (target && target.innerText) {
+      target.innerText = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
+      target.style.color = "red";
+      target.style.fontFamily = "serif";
+      if (Math.random() > 0.9) target.style.opacity = "0";
+    }
+  }, 200);
+
+  // Final Touch: The original Collision Text
+  if (collisionText) {
+    collisionText.innerText = "CRITICAL SYSTEM FAILURE";
+  }
+
+  // Clean up the button
+  voidBtn.remove();
+});
 
 // Run app
 Matter.Render.run(render)

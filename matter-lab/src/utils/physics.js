@@ -1,4 +1,6 @@
 export function calculateMomentum(ball) {
+    // If the ball is null or undefined, return 0 instead of crashing
+    if (!ball || !ball.velocity) return 0;
 
     const speed = Math.sqrt(
         ball.velocity.x ** 2 +
@@ -9,6 +11,8 @@ export function calculateMomentum(ball) {
 }
 
 export function calculateKE(ball) {
+    // If the ball is null or undefined, return 0 instead of crashing
+    if (!ball || !ball.velocity) return 0;
 
     const speed = Math.sqrt(
         ball.velocity.x ** 2 +
@@ -21,5 +25,4 @@ export function calculateKE(ball) {
         speed *
         speed
     )
-
 }
