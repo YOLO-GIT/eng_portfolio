@@ -34,6 +34,8 @@ import {
   calculateKE
 } from './utils/physics'
 
+import horrorMusicUrl from './assets/j_theme.mp3'
+
 const velocityInput =
   document.getElementById('velocityInput')
 
@@ -312,8 +314,10 @@ window.addEventListener('resize', () => {
   // Body.scale(ground, w / oldW, 1); 
 });
 
-// 1. Create the button properly first
-const voidBtn = document.getElementById('voidBtn');
+// 1. Create and configure the hidden button properly first
+const voidBtn = document.createElement('button');
+voidBtn.id = 'voidBtn';
+voidBtn.innerText = 'system.ext_001';
 document.body.appendChild(voidBtn);
 
 let isCorrupted = false;
@@ -323,20 +327,30 @@ voidBtn.addEventListener('click', () => {
   if (isCorrupted) return;
   isCorrupted = true;
 
-  // Inside your voidBtn listener...
+  // Clear the world and break the ball loops immediately
   Matter.World.clear(engine.world, false);
-  ball1 = null; // Tell the rest of the script ball1 is dead
-  ball2 = null; // Tell the rest of the script ball2 is dead
+  ball1 = null;
+  ball2 = null;
 
-  // --- VISUAL CORRUPTION ---
+  // --- VISUAL CORRUPTION (Blood Red & Dark) ---
   document.body.classList.add('corrupted');
-  // Force a heavy glitch filter via JS as well
   document.body.style.filter = 'contrast(200%)';
+
+  // --- AUDIO: CUSTOM MUSIC ---
+  // Replace 'path/to/your/horror-music.mp3' with your actual file track url or local path
+  const horrorMusic = new Audio(horrorMusicUrl);
+  horrorMusic.loop = true;
+  horrorMusic.volume = 1.0; // Adjust the volume (0.0 to 1.0)
+
+  // Browsers require a user gesture (like this click!) to allow audio playback
+  horrorMusic.play().catch(err => {
+    console.log("Audio playback blocked or failed:", err);
+  });
 
   // --- AUDIO: HEARTBEAT & DRONE ---
   const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-  // Low Drone
+  // Low Background Drone
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = 'sawtooth';
@@ -346,7 +360,7 @@ voidBtn.addEventListener('click', () => {
   gain.connect(audioCtx.destination);
   osc.start();
 
-  // Heartbeat Pulse
+  // Layered Heartbeat Pulse
   setInterval(() => {
     const pOsc = audioCtx.createOscillator();
     const pGain = audioCtx.createGain();
@@ -361,25 +375,20 @@ voidBtn.addEventListener('click', () => {
   }, 1000);
 
   // --- PHYSICS: THE SWARM ---
-  // Safely clear the world and invalidate the old balls
-  Matter.World.clear(engine.world, false);
-  ball1 = null;
-  ball2 = null;
-
   for (let i = 0; i < 66; i++) {
     const tooth = Matter.Bodies.polygon(
       Math.random() * window.innerWidth,
       Math.random() * window.innerHeight,
       3, 5,
       {
-        render: { fillStyle: '#880808' },
+        render: { fillStyle: '#880808' }, // Deep blood red teeth
         frictionAir: 0.05,
         label: 'entity'
       }
     );
     Matter.World.add(engine.world, tooth);
 
-    // Movement Logic: Use "Ghost Mouse" to avoid 'undefined' errors
+    // Movement Logic: Shards circling tracking ghosts
     Matter.Events.on(engine, 'beforeUpdate', () => {
       const time = Date.now() * 0.002;
       const ghostPos = {
@@ -412,12 +421,11 @@ voidBtn.addEventListener('click', () => {
     }
   }, 200);
 
-  // Final Touch: The original Collision Text
   if (collisionText) {
     collisionText.innerText = "CRITICAL SYSTEM FAILURE";
   }
 
-  // Clean up the button
+  // Clean up the trigger button
   voidBtn.remove();
 });
 
