@@ -27,18 +27,43 @@ export function setupWorld(engine, objects) {
     window.addEventListener('resize', () => {
         const w = window.innerWidth;
         const h = window.innerHeight;
+        const thickness = 1000;
 
-        // Move the visible floor
-        Body.setPosition(ground, { x: w / 2, y: h - 10 });
+        // Safety check: If balls are already destroyed by the horror sequence, skip this
+        if (ball1 && ball1.position) {
+            Matter.Body.setVelocity(ball1, { x: 0, y: 0 });
+            Matter.Body.setAngularVelocity(ball1, 0);
+        }
+        if (ball2 && ball2.position) {
+            Matter.Body.setVelocity(ball2, { x: 0, y: 0 });
+            Matter.Body.setAngularVelocity(ball2, 0);
+        }
 
-        // Find and move the invisible boundaries
+        // Find our specific walls by label and snap them to new edges
         const bodies = engine.world.bodies;
+        const ground = bodies.find(b => b.label === 'bound-ground' || b.label === 'ground');
         const ceiling = bodies.find(b => b.label === 'bound-ceiling');
         const left = bodies.find(b => b.label === 'bound-left');
         const right = bodies.find(b => b.label === 'bound-right');
+        const track = bodies.find(b => b.label === 'track');
 
-        if (ceiling) Body.setPosition(ceiling, { x: w / 2, y: -thickness / 2 });
-        if (left) Body.setPosition(left, { x: -thickness / 2, y: h / 2 });
-        if (right) Body.setPosition(right, { x: w + thickness / 2, y: h / 2 });
+        if (ground) Matter.Body.setPosition(ground, { x: w / 2, y: h - 10 });
+        if (ceiling) Matter.Body.setPosition(ceiling, { x: w / 2, y: -thickness / 2 });
+        if (left) Matter.Body.setPosition(left, { x: -thickness / 2, y: h / 2 });
+        if (right) Matter.Body.setPosition(right, { x: w + thickness / 2, y: h / 2 });
+        if (track) Matter.Body.setPosition(track, { x: w / 2, y: h / 2 });
     });
+
+    const track = Bodies.rectangle(
+        window.innerWidth / 2,
+        350,
+        1600,
+        12,
+        {
+            isStatic: true,
+            render: {
+                fillStyle: '#888'
+            }
+        }
+    )
 }
