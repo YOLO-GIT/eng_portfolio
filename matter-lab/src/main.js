@@ -35,6 +35,7 @@ import {
 } from './utils/physics'
 
 import horrorMusicUrl from './assets/j_theme.mp3'
+import imageUrl from './assets/i_can_see_you.jpg'
 
 const velocityInput =
   document.getElementById('velocityInput')
@@ -51,22 +52,17 @@ const velocityText =
 const momentumText =
   document.getElementById('momentumText')
 
-const pauseBtn =
-  document.getElementById('pauseBtn')
-
-const resumeBtn =
-  document.getElementById('resumeBtn')
-
 const slowmoBtn =
   document.getElementById('slowmoBtn')
 
 const normalSpeedBtn =
   document.getElementById('normalSpeedBtn')
 
-const zeroGravityBtn =
-  document.getElementById('zeroGravityBtn')
+const toggleShakeBtn =
+  document.getElementById('toggleShakeBtn')
 
-const GravityBtn = document.getElementById('GravityBtn')
+const linearModeBtn =
+  document.getElementById('linearModeBtn')
 
 const beforeMomentum =
   document.getElementById('beforeMomentum')
@@ -143,6 +139,18 @@ resetBtn.addEventListener('click', () => {
   collisionText.innerText = "Everything is new again. Or is it?";
 });
 
+let shakeEnabled = false;
+
+toggleShakeBtn.addEventListener('click', () => {
+
+  shakeEnabled = !shakeEnabled
+  toggleShakeBtn.innerText =
+    shakeEnabled
+      ? 'Disable Shake'
+      : 'Enable Shake'
+
+})
+
 // Stats Update
 Matter.Events.on(engine, 'collisionStart', () => {
 
@@ -174,7 +182,7 @@ Matter.Events.on(engine, 'collisionStart', () => {
   } else {
     const force = ball1.speed + ball2.speed;
 
-    if (force > 5) {
+    if (shakeEnabled && force > 5) {
       document.body.style.transition = '0.05s';
       document.body.style.transform = `translate(${Math.random() * 20}px, ${Math.random() * 20}px)`;
 
@@ -268,51 +276,53 @@ toggleSettingsBtn.addEventListener('click', () => {
 // Settings panel toggle end
 
 //Buttons for pause, resume, slow motion, and normal speed
-pauseBtn.addEventListener('click', () => { Matter.Runner.stop(runner) })
-resumeBtn.addEventListener('click', () => { Matter.Runner.run(runner, engine) })
 slowmoBtn.addEventListener('click', () => { engine.timing.timeScale = 0.2 })
 normalSpeedBtn.addEventListener('click', () => { engine.timing.timeScale = 1 })
-zeroGravityBtn.addEventListener('click', () => { engine.gravity.y = 0 })
-GravityBtn.addEventListener('click', () => { engine.gravity.y = 1 }) // Reset to normal gravity
 // Buttons end  
 
-window.addEventListener('resize', () => {
-  // 1. Update Canvas
-  render.canvas.width = window.innerWidth;
-  render.canvas.height = window.innerHeight;
+//Linear collision toggle (for fun)
+let linearMode = false
+linearModeBtn.addEventListener('click', () => {
 
-  // 2. Update Ground (assuming you labeled it 'ground' in world.js)
-  const ground = engine.world.bodies.find(b => b.label === 'ground');
-  if (ground) {
-    Matter.Body.setPosition(ground, {
-      x: window.innerWidth / 2,
-      y: window.innerHeight - 30
-    });
+  linearMode = !linearMode
+
+  linearModeBtn.innerText =
+    linearMode
+      ? 'Linear Mode ON'
+      : 'Linear Collision'
+
+})
+
+Matter.Events.on(engine, 'beforeUpdate', () => {
+
+  if (!linearMode) {
+    engine.gravity.y = 1
+  } else {
+    // Lock ball1 Y
+    Matter.Body.setPosition(ball1, {
+      x: ball1.position.x,
+      y: window.innerHeight / 2
+    })
+
+    Matter.Body.setVelocity(ball1, {
+      x: ball1.velocity.x,
+      y: 0
+    })
+
+    // Lock ball2 Y
+    Matter.Body.setPosition(ball2, {
+      x: ball2.position.x,
+      y: window.innerHeight / 2
+    })
+
+    Matter.Body.setVelocity(ball2, {
+      x: ball2.velocity.x,
+      y: 0
+    })
+    engine.gravity.y = 0
   }
-});
-
-window.addEventListener('resize', () => {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const Body = Matter.Body;
-  const thickness = 100;
-
-  // Find our specific walls by label and snap them to new edges
-  const bodies = engine.world.bodies;
-
-  const ground = bodies.find(b => b.label === 'bound-ground');
-  const ceiling = bodies.find(b => b.label === 'bound-ceiling');
-  const left = bodies.find(b => b.label === 'bound-left');
-  const right = bodies.find(b => b.label === 'bound-right');
-
-  if (ground) Body.setPosition(ground, { x: w / 2, y: h + thickness / 2 });
-  if (ceiling) Body.setPosition(ceiling, { x: w / 2, y: -thickness / 2 });
-  if (left) Body.setPosition(left, { x: -thickness / 2, y: h / 2 });
-  if (right) Body.setPosition(right, { x: w + thickness / 2, y: h / 2 });
-
-  // Also resize the ground width if necessary
-  // Body.scale(ground, w / oldW, 1); 
-});
+})
+//Linear collision end
 
 // 1. Create and configure the hidden button properly first
 const voidBtn = document.createElement('button');
@@ -379,9 +389,15 @@ voidBtn.addEventListener('click', () => {
     const tooth = Matter.Bodies.polygon(
       Math.random() * window.innerWidth,
       Math.random() * window.innerHeight,
-      3, 5,
+      3, 15, // A larger radius helps display the image cleanly
       {
-        render: { fillStyle: '#880808' }, // Deep blood red teeth
+        render: {
+          sprite: {
+            texture: imageUrl,
+            xScale: 0.5, // Shrink or grow your image to scale
+            yScale: 0.5
+          }
+        },
         frictionAir: 0.05,
         label: 'entity'
       }
