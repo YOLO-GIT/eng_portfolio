@@ -29,16 +29,6 @@ export function setupWorld(engine, objects) {
         const h = window.innerHeight;
         const thickness = 1000;
 
-        // Safety check: If balls are already destroyed by the horror sequence, skip this
-        if (ball1 && ball1.position) {
-            Matter.Body.setVelocity(ball1, { x: 0, y: 0 });
-            Matter.Body.setAngularVelocity(ball1, 0);
-        }
-        if (ball2 && ball2.position) {
-            Matter.Body.setVelocity(ball2, { x: 0, y: 0 });
-            Matter.Body.setAngularVelocity(ball2, 0);
-        }
-
         // Find our specific walls by label and snap them to new edges
         const bodies = engine.world.bodies;
         const ground = bodies.find(b => b.label === 'bound-ground' || b.label === 'ground');

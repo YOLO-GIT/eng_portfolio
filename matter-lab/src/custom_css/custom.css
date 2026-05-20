@@ -6,8 +6,7 @@
 }
 
 html,
-body,
-#root {
+body {
     margin: 0;
     padding: 0;
     width: 100%;
@@ -171,8 +170,23 @@ p {
 
 /* The Corruption State */
 body.corrupted {
-    animation: jitter 0.1s infinite;
-    background: #1a0000 !important;
+    animation: jitter 0.15s infinite;
+
+    /* Loads your image directly from the public root */
+    background-image: url('../assets/bg_flesh.webp');
+    background-size: cover;
+    background-position: center;
+
+    /* Blends the image into an ominous deep red tint */
+    background-color: #d7d4d4;
+    background-blend-mode: multiply;
+
+    transition: filter 0.5s ease;
+}
+
+/* Make your canvas transparent so the body image peeks through perfectly */
+body.corrupted canvas {
+    background: transparent !important;
 }
 
 body.corrupted #ui {
