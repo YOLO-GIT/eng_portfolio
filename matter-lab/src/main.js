@@ -64,11 +64,11 @@ function spawnNormalBalls() {
 
   // Inject them back into active simulation loops
   Matter.World.add(engine.world, [ball1, ball2]);
+  addMouseControl(engine, render);
 }
 
 // Initial Boot Call on Page Load
 spawnNormalBalls();
-addMouseControl(engine, render);
 
 // --- BASE APPLICATION FUNCTIONAL LISTENERS ---
 
