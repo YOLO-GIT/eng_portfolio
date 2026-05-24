@@ -10,7 +10,7 @@ import { updateStats } from './ui/stats'
 import { drawVelocityArrow } from './ui/velocityArrows'
 import { calculateMomentum, calculateKE } from './utils/physics'
 
-import horrorMusicUrl from './assets/j_theme.mp3'
+import horrorMusicUrl from './assets/j_theme_new.mp3'
 import imageUrl from './assets/i_can_see_you.png'
 
 // --- UI DOM ELEMENTS ---
@@ -190,7 +190,7 @@ Matter.Events.on(engine, 'beforeUpdate', () => {
 });
 
 // ============================================================================
-// HORROR MECHANISM: VOID BUTTON ARCHITECTURE
+// HORROR MECHANISM: AUDIO TIMESTAMP-DRIVEN ARCHITECTURE (NO POPUP)
 // ============================================================================
 const voidBtn = document.createElement('button');
 voidBtn.id = 'voidBtn';
@@ -220,46 +220,24 @@ voidBtn.addEventListener('click', () => {
   const gain = audioCtx.createGain();
   osc.type = 'sawtooth';
   osc.frequency.setValueAtTime(40, audioCtx.currentTime);
-  gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+  gain.gain.setValueAtTime(0.005, audioCtx.currentTime);
   osc.connect(gain);
   gain.connect(audioCtx.destination);
   osc.start();
 
-  const heartbeatInterval = setInterval(() => {
-    const pOsc = audioCtx.createOscillator();
-    const pGain = audioCtx.createGain();
-    pOsc.type = 'sine';
-    pOsc.frequency.setValueAtTime(50, audioCtx.currentTime);
-    pGain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    pGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
-    pOsc.connect(pGain);
-    pGain.connect(audioCtx.destination);
-    pOsc.start();
-    pOsc.stop(audioCtx.currentTime + 0.5);
-  }, 1000);
-
-  // Generate Swarm
+  let heartbeatInterval = null;
+  let uiInterval = null;
   const swarmEntities = [];
-  for (let i = 0; i < 66; i++) {
-    const tooth = Matter.Bodies.polygon(
-      Math.random() * window.innerWidth,
-      Math.random() * window.innerHeight,
-      3, 15,
-      {
-        render: {
-          sprite: { texture: imageUrl, xScale: 0.5, yScale: 0.5 }
-        },
-        frictionAir: 0.05,
-        label: 'entity'
-      }
-    );
-    swarmEntities.push(tooth);
-    Matter.World.add(engine.world, tooth);
-  }
 
-  // FIXED: A single, clean runtime frame loop to animate the swarm elements efficiently
+  // Cache text metrics to restore later
+  const textRecoveryMap = new Map();
+  const allElements = document.querySelectorAll('h1, h2, p, label, button, span');
+  allElements.forEach(el => textRecoveryMap.set(el, el.innerText));
+  const creepyMessages = ["IT HURTS", "STOP IT", "LEAKING", "HELP US", "VOID"];
+
+  // Handle the single frame updates for the swarm
   const swarmAnimationListener = () => {
-    if (!isCorrupted) return;
+    if (!isCorrupted || swarmEntities.length === 0) return;
     const time = Date.now() * 0.002;
 
     swarmEntities.forEach((tooth, idx) => {
@@ -267,67 +245,153 @@ voidBtn.addEventListener('click', () => {
         x: (window.innerWidth / 2) + Math.cos(time + idx) * 300,
         y: (window.innerHeight / 2) + Math.sin(time + idx) * 300
       };
-      const force = 0.0003;
-      Matter.Body.applyForce(tooth, tooth.position, {
-        x: (ghostPos.x - tooth.position.x) * force,
-        y: (ghostPos.y - tooth.position.y) * force
-      });
-      Matter.Body.setAngularVelocity(tooth, Math.random() * 0.1 - 0.05);
+
+      const isSongDistorted = horrorMusic.currentTime >= 15.0;
+
+      if (!isSongDistorted) {
+        const force = 0.0003;
+        Matter.Body.applyForce(tooth, tooth.position, {
+          x: (ghostPos.x - tooth.position.x) * force,
+          y: (ghostPos.y - tooth.position.y) * force
+        });
+        Matter.Body.setAngularVelocity(tooth, 0.02);
+      } else {
+        const randomX = Math.random() * 2 - 1;
+        const randomY = Math.random() * 2 - 1;
+        const swarmIntensity = 0.007;
+        Matter.Body.applyForce(tooth, tooth.position, {
+          x: randomX * swarmIntensity,
+          y: randomY * swarmIntensity
+        });
+        Matter.Body.setAngularVelocity(tooth, Math.random() * 0.5 - 0.25);
+      }
     });
   };
   Matter.Events.on(engine, 'beforeUpdate', swarmAnimationListener);
 
-  // UI Vandalism Setup
-  const textRecoveryMap = new Map();
-  const allElements = document.querySelectorAll('h1, h2, p, label, button, span');
-  allElements.forEach(el => textRecoveryMap.set(el, el.innerText));
+  // TIMESTAMP EVENT GATEKEEPERS
+  const milestones = {
+    alarmStarted: false,
+    droneDropped: false,
+    screechTriggered: false,
+    systemRecovered: false
+  };
 
-  const creepyMessages = ["IT HURTS", "STOP IT", "LEAKING", "HELP US", "VOID"];
-  const uiInterval = setInterval(() => {
-    const target = allElements[Math.floor(Math.random() * allElements.length)];
-    if (target && target.innerText) {
-      target.innerText = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
-      target.style.color = "red";
-      target.style.fontFamily = "serif";
-    }
-  }, 200);
+  horrorMusic.addEventListener('timeupdate', () => {
+    const time = horrorMusic.currentTime;
 
-  if (collisionText) collisionText.innerText = "CRITICAL SYSTEM FAILURE";
+    // --- MILESTONE 1: 4.5 Seconds (The Electronic Alarm Starts) ---
+    if (time >= 4.5 && !milestones.alarmStarted) {
+      milestones.alarmStarted = true;
+      if (collisionText) collisionText.innerText = "WARNING: UNSTABLE MEMORY RUNTIME";
+      document.body.style.filter = 'contrast(120%)';
 
-  // --- AUDIO END REBOOT LOGIC ---
-  horrorMusic.addEventListener('ended', () => {
-    isCorrupted = false;
-
-    // Clear trackers
-    clearInterval(heartbeatInterval);
-    clearInterval(uiInterval);
-    osc.stop();
-    audioCtx.close();
-    Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
-
-    // Dynamic clean structural reset 
-    spawnNormalBalls();
-
-    // Clean up layout properties
-    document.body.classList.remove('corrupted');
-    document.body.style.filter = 'none';
-    document.body.style.background = '#050505';
-
-    if (render && render.options) {
-      render.options.background = '#050505';
-    }
-
-    // Recover Text Nodes
-    allElements.forEach(el => {
-      if (textRecoveryMap.has(el)) {
-        el.innerText = textRecoveryMap.get(el);
-        el.style.color = "";
-        el.style.fontFamily = "";
-        el.style.opacity = "1";
+      for (let i = 0; i < 66; i++) {
+        const tooth = Matter.Bodies.polygon(
+          Math.random() * window.innerWidth,
+          Math.random() * window.innerHeight,
+          3, 15,
+          {
+            render: { sprite: { texture: imageUrl, xScale: 0.5, yScale: 0.5 } },
+            frictionAir: 0.05,
+            label: 'entity'
+          }
+        );
+        swarmEntities.push(tooth);
+        Matter.World.add(engine.world, tooth);
       }
-    });
+    }
 
-    if (collisionText) collisionText.innerText = "Collision Status: STABLE";
+    // --- MILESTONE 2: 11.0 Seconds (The Heavy Beat/Drone Drop) ---
+    if (time >= 11.0 && !milestones.droneDropped) {
+      milestones.droneDropped = true;
+      if (collisionText) collisionText.innerText = "CRITICAL SYSTEM FAILURE";
+      document.body.style.filter = 'contrast(200%)';
+
+      heartbeatInterval = setInterval(() => {
+        const pOsc = audioCtx.createOscillator();
+        const pGain = audioCtx.createGain();
+        pOsc.type = 'sine';
+        pOsc.frequency.setValueAtTime(50, audioCtx.currentTime);
+        pGain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        pGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+        pOsc.connect(pGain);
+        pGain.connect(audioCtx.destination);
+        pOsc.start();
+        pOsc.stop(audioCtx.currentTime + 0.5);
+      }, 850);
+
+      uiInterval = setInterval(() => {
+        const target = allElements[Math.floor(Math.random() * allElements.length)];
+        if (target && target.innerText) {
+          target.innerText = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
+          target.style.color = "#a00";
+          target.style.fontFamily = "serif";
+        }
+      }, 180);
+    }
+
+    // --- MILESTONE 3: 15.0 Seconds (The Distorted Electronic Screech) ---
+    if (time >= 15.0 && !milestones.screechTriggered) {
+      milestones.screechTriggered = true;
+
+      document.body.classList.add('corrupted');
+      document.body.style.filter = 'contrast(300%)';
+
+      document.body.style.backgroundImage = `url('${imageUrl}')`;
+      document.body.style.backgroundSize = 'cover';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundBlendMode = 'difference';
+
+      if (render && render.options) render.options.background = 'transparent';
+    }
+
+    // --- MILESTONE 4: 20.0 Seconds (Instant Automated Recovery) ---
+    if (time >= 34.0 && !milestones.systemRecovered) {
+      milestones.systemRecovered = true;
+
+      // 1. Instantly tear down all audio engines
+      horrorMusic.pause();
+      osc.stop();
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (uiInterval) clearInterval(uiInterval);
+
+      // 2. Stagger the structural physics reboot to avoid console maxFrameTime warning drops
+      setTimeout(() => {
+        isCorrupted = false;
+        Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
+
+        // Clear layout elements out and revive stable bouncing bodies
+        spawnNormalBalls();
+
+        // Restore core website design aesthetics
+        document.body.classList.remove('corrupted');
+        document.body.style.filter = 'none';
+        document.body.style.background = '#14151f';
+        document.body.style.backgroundImage = 'none';
+
+        if (render && render.options) render.options.background = '#14151f';
+
+        // Repair typography states back to original string values
+        allElements.forEach(el => {
+          if (textRecoveryMap.has(el)) {
+            el.innerText = textRecoveryMap.get(el);
+            el.style.color = "";
+            el.style.fontFamily = "";
+            el.style.opacity = "1";
+          }
+        });
+
+        if (collisionText) collisionText.innerText = "Collision Status: STABLE";
+      }, 50);
+    }
+  });
+
+  // Safe fallback if audio context closes on natural termination loop paths
+  horrorMusic.addEventListener('ended', () => {
+    if (!milestones.systemRecovered) {
+      voidBtn.click(); // If ended fires before timeupdate hits check loops, force process completion
+    }
   });
 
   voidBtn.remove();
