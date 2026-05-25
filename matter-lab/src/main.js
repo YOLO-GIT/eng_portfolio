@@ -12,6 +12,7 @@ import { calculateMomentum, calculateKE } from './utils/physics'
 
 import horrorMusicUrl from './assets/j_theme_new.mp3'
 import imageUrl from './assets/i_can_see_you.png'
+import imageUrl2 from './assets/bruh.png'
 
 // --- UI DOM ELEMENTS ---
 const velocityInput = document.getElementById('velocityInput')
@@ -190,7 +191,7 @@ Matter.Events.on(engine, 'beforeUpdate', () => {
 });
 
 // ============================================================================
-// HORROR MECHANISM: AUDIO TIMESTAMP-DRIVEN ARCHITECTURE (NO POPUP)
+// HORROR MECHANISM: AUDIO TIMESTAMP-DRIVEN ARCHITECTURE (ORIGINAL SMOOTH SWARM)
 // ============================================================================
 const voidBtn = document.createElement('button');
 voidBtn.id = 'voidBtn';
@@ -235,7 +236,7 @@ voidBtn.addEventListener('click', () => {
   allElements.forEach(el => textRecoveryMap.set(el, el.innerText));
   const creepyMessages = ["IT HURTS", "STOP IT", "LEAKING", "HELP US", "VOID"];
 
-  // Handle the single frame updates for the swarm
+  // FIXED: Handles the frame updates keeping ONLY the original smooth circling logic
   const swarmAnimationListener = () => {
     if (!isCorrupted || swarmEntities.length === 0) return;
     const time = Date.now() * 0.002;
@@ -246,25 +247,15 @@ voidBtn.addEventListener('click', () => {
         y: (window.innerHeight / 2) + Math.sin(time + idx) * 300
       };
 
-      const isSongDistorted = horrorMusic.currentTime >= 15.0;
+      // Original calculation: Smooth tracking orbits
+      const force = 0.0003;
+      Matter.Body.applyForce(tooth, tooth.position, {
+        x: (ghostPos.x - tooth.position.x) * force,
+        y: (ghostPos.y - tooth.position.y) * force
+      });
 
-      if (!isSongDistorted) {
-        const force = 0.0003;
-        Matter.Body.applyForce(tooth, tooth.position, {
-          x: (ghostPos.x - tooth.position.x) * force,
-          y: (ghostPos.y - tooth.position.y) * force
-        });
-        Matter.Body.setAngularVelocity(tooth, 0.02);
-      } else {
-        const randomX = Math.random() * 2 - 1;
-        const randomY = Math.random() * 2 - 1;
-        const swarmIntensity = 0.007;
-        Matter.Body.applyForce(tooth, tooth.position, {
-          x: randomX * swarmIntensity,
-          y: randomY * swarmIntensity
-        });
-        Matter.Body.setAngularVelocity(tooth, Math.random() * 0.5 - 0.25);
-      }
+      // Subtle rhythmic rotation twist
+      Matter.Body.setAngularVelocity(tooth, Math.random() * 0.1 - 0.05);
     });
   };
   Matter.Events.on(engine, 'beforeUpdate', swarmAnimationListener);
@@ -280,19 +271,20 @@ voidBtn.addEventListener('click', () => {
   horrorMusic.addEventListener('timeupdate', () => {
     const time = horrorMusic.currentTime;
 
-    // --- MILESTONE 1: 4.5 Seconds (The Electronic Alarm Starts) ---
+    // --- MILESTONE 1: 4.5 Seconds (The Electronic Alarm Starts - Spawn Swarm) ---
     if (time >= 4.5 && !milestones.alarmStarted) {
       milestones.alarmStarted = true;
       if (collisionText) collisionText.innerText = "WARNING: UNSTABLE MEMORY RUNTIME";
       document.body.style.filter = 'contrast(120%)';
 
+      // Spawning the eye swarm bodies back in
       for (let i = 0; i < 66; i++) {
         const tooth = Matter.Bodies.polygon(
           Math.random() * window.innerWidth,
           Math.random() * window.innerHeight,
           3, 15,
           {
-            render: { sprite: { texture: imageUrl, xScale: 0.5, yScale: 0.5 } },
+            render: { sprite: { texture: imageUrl2, xScale: 0.5, yScale: 0.5 } },
             frictionAir: 0.05,
             label: 'entity'
           }
@@ -331,22 +323,28 @@ voidBtn.addEventListener('click', () => {
       }, 180);
     }
 
-    // --- MILESTONE 3: 15.0 Seconds (The Distorted Electronic Screech) ---
+    // --- MILESTONE 3: 15.0 Seconds (The Distorted Electronic Screech - Background Active) ---
     if (time >= 15.0 && !milestones.screechTriggered) {
       milestones.screechTriggered = true;
 
       document.body.classList.add('corrupted');
-      document.body.style.filter = 'contrast(300%)';
+      document.body.style.filter = 'contrast(200%)'; // Retains crisp contrast boundaries
 
+      // Forces the baseline backdrop to be pitch black
+      document.body.style.backgroundColor = '#000000';
+
+      // Centers your asset as a sharp, un-stretched standalone entity
       document.body.style.backgroundImage = `url('${imageUrl}')`;
-      document.body.style.backgroundSize = 'cover';
-      document.body.style.backgroundPosition = 'center';
-      document.body.style.backgroundBlendMode = 'difference';
+      document.body.style.backgroundSize = 'contain';     // FIXED: Keeps asset ratios pristine
+      document.body.style.backgroundPosition = 'center';  // Locks asset directly to screen center
+      document.body.style.backgroundRepeat = 'no-repeat'; // Prevents layout asset duplication tiling
+      document.body.style.backgroundBlendMode = 'normal'; // Ensures clean coloring
 
+      // Turn physics canvas transparent so your backdrop container is clearly visible
       if (render && render.options) render.options.background = 'transparent';
     }
 
-    // --- MILESTONE 4: 20.0 Seconds (Instant Automated Recovery) ---
+    // --- MILESTONE 4: 34.0 Seconds (Instant Automated Recovery) ---
     if (time >= 34.0 && !milestones.systemRecovered) {
       milestones.systemRecovered = true;
 
@@ -361,7 +359,7 @@ voidBtn.addEventListener('click', () => {
         isCorrupted = false;
         Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
 
-        // Clear layout elements out and revive stable bouncing bodies
+        // Clear elements out and revive stable bouncing simulation objects
         spawnNormalBalls();
 
         // Restore core website design aesthetics
@@ -387,10 +385,28 @@ voidBtn.addEventListener('click', () => {
     }
   });
 
-  // Safe fallback if audio context closes on natural termination loop paths
+  // Safe fallback if audio context closes on natural termination paths
   horrorMusic.addEventListener('ended', () => {
     if (!milestones.systemRecovered) {
-      voidBtn.click(); // If ended fires before timeupdate hits check loops, force process completion
+      milestones.systemRecovered = true;
+      isCorrupted = false;
+      if (heartbeatInterval) clearInterval(heartbeatInterval);
+      if (uiInterval) clearInterval(uiInterval);
+      try { osc.stop(); } catch (e) { }
+      Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
+      spawnNormalBalls();
+      document.body.classList.remove('corrupted');
+      document.body.style.filter = 'none';
+      document.body.style.background = '#14151f';
+      document.body.style.backgroundImage = 'none';
+      if (render && render.options) render.options.background = '#14151f';
+      allElements.forEach(el => {
+        if (textRecoveryMap.has(el)) {
+          el.innerText = textRecoveryMap.get(el);
+          el.style.color = ""; el.style.fontFamily = ""; el.style.opacity = "1";
+        }
+      });
+      if (collisionText) collisionText.innerText = "Collision Status: STABLE";
     }
   });
 
