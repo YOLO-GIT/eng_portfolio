@@ -1,8 +1,8 @@
 ## Description
 
 - Some off time project I made based on what I learned (remembered?) in Engineering Science.
-- A minimalist, interactive physics toy designed for relaxation and focus.
-- Click and drag the bouncing entities to interact with the simulated environment. Built as a small weekend experiment to test smooth 60fps canvas rendering and soothing kinetic motion.
+- This is a simple proof-of-concept demonstrating basic rigid-body physics implementation using Matter.js and Vite. It tests environmental boundary limits, object restitution (bounciness), and DOM-to-Canvas event listening.
+- _Note: The UI is currently a bit buggy and the 'system.ext' debug button occasionally causes memory leaks or UI glitches. I'll patch this in a future update. (DO NOT CLICK!)_
 
 ### Features
 
@@ -10,6 +10,12 @@
 - Drag-and-drop mouse controls
 - Responsive collision boundaries
 - Calming, seamless loop design
+
+### Tech Stack
+
+- HTML5 Canvas / Vanilla JS
+- Vite Development Server
+- Matter.js 2D Physics Engine
 
 ## <p align="center"><img src="name_template_latest.png"></p>
 
