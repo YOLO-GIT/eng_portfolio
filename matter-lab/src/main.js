@@ -232,6 +232,7 @@ voidBtn.addEventListener('click', () => {
 
   // Cache text metrics to restore later
   const textRecoveryMap = new Map();
+  const originalTitle = document.title; // <--- ADD THIS LINE
   const allElements = document.querySelectorAll('h1, h2, p, label, button, span');
   allElements.forEach(el => textRecoveryMap.set(el, el.innerText));
   const creepyMessages = ["IT HURTS", "STOP IT", "LEAKING", "HELP US", "VOID"];
@@ -265,6 +266,7 @@ voidBtn.addEventListener('click', () => {
     alarmStarted: false,
     droneDropped: false,
     screechTriggered: false,
+    voidStateTriggered: false, // ADD THIS NEW FLAG
     systemRecovered: false
   };
 
@@ -314,9 +316,16 @@ voidBtn.addEventListener('click', () => {
       }, 850);
 
       uiInterval = setInterval(() => {
+        // Randomly pick a creepy message
+        const randomCreepyText = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
+
+        // 1. Glitch the browser tab title!
+        document.title = randomCreepyText;
+
+        // 2. Glitch the website text
         const target = allElements[Math.floor(Math.random() * allElements.length)];
         if (target && target.innerText) {
-          target.innerText = creepyMessages[Math.floor(Math.random() * creepyMessages.length)];
+          target.innerText = randomCreepyText;
           target.style.color = "#a00";
           target.style.fontFamily = "serif";
         }
@@ -344,33 +353,66 @@ voidBtn.addEventListener('click', () => {
       if (render && render.options) render.options.background = 'transparent';
     }
 
-    // --- MILESTONE 4: 34.0 Seconds (Instant Automated Recovery) ---
-    if (time >= 34.0 && !milestones.systemRecovered) {
-      milestones.systemRecovered = true;
+    // --- MILESTONE 4: 34.0 Seconds (The Void - Hide everything except the face) ---
+    if (time >= 34.0 && !milestones.voidStateTriggered) {
+      milestones.voidStateTriggered = true;
 
-      // 1. Instantly tear down all audio engines
-      horrorMusic.pause();
-      osc.stop();
+      // 1. Stop the glitching intervals so text stops changing
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       if (uiInterval) clearInterval(uiInterval);
+
+      // 2. Wipe the physics engine clean
+      Matter.World.clear(engine.world, false);
+
+      // 3. FULL UI WIPE: Hide the main UI div, the inputs, and the canvas completely
+      const uiContainer = document.getElementById('ui');
+      if (uiContainer) uiContainer.style.opacity = "0";
+
+      if (render && render.canvas) render.canvas.style.opacity = "0"; // Hides the physics box
+
+      document.querySelectorAll('input').forEach(el => el.style.opacity = "0"); // Hides text boxes
+
+      // Hide all loose text elements
+      allElements.forEach(el => { el.style.opacity = "0"; });
+      if (collisionText) collisionText.style.opacity = "0";
+    }
+
+    // --- MILESTONE 5: 36.0 Seconds (Instant Automated Recovery) ---
+    if (time >= 36.0 && !milestones.systemRecovered) {
+      milestones.systemRecovered = true;
+
+      // 1. Instantly tear down all audio engines now that the track is done
+      horrorMusic.pause();
+      osc.stop();
 
       // 2. Stagger the structural physics reboot to avoid console maxFrameTime warning drops
       setTimeout(() => {
         isCorrupted = false;
         Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
 
-        // Clear elements out and revive stable bouncing simulation objects
+        // Clear layout elements out and revive stable bouncing bodies
         spawnNormalBalls();
 
         // Restore core website design aesthetics
         document.body.classList.remove('corrupted');
         document.body.style.filter = 'none';
-        document.body.style.background = '#14151f';
+        document.body.style.backgroundColor = '#14151f';
         document.body.style.backgroundImage = 'none';
+
+        // --- ADD THE TITLE RESET HERE! ---
+        document.title = originalTitle;
 
         if (render && render.options) render.options.background = '#14151f';
 
-        // Repair typography states back to original string values
+        // 3. BRING EVERYTHING BACK: Restore the UI div, inputs, and canvas
+        const uiContainer = document.getElementById('ui');
+        if (uiContainer) uiContainer.style.opacity = "1";
+
+        if (render && render.canvas) render.canvas.style.opacity = "1";
+
+        document.querySelectorAll('input').forEach(el => el.style.opacity = "1");
+
+        // Repair typography states back to original string values AND make them visible again
         allElements.forEach(el => {
           if (textRecoveryMap.has(el)) {
             el.innerText = textRecoveryMap.get(el);
@@ -380,7 +422,10 @@ voidBtn.addEventListener('click', () => {
           }
         });
 
-        if (collisionText) collisionText.innerText = "Collision Status: STABLE";
+        if (collisionText) {
+          collisionText.innerText = "Collision Status: STABLE";
+          collisionText.style.opacity = "1";
+        }
       }, 50);
     }
   });
@@ -390,23 +435,44 @@ voidBtn.addEventListener('click', () => {
     if (!milestones.systemRecovered) {
       milestones.systemRecovered = true;
       isCorrupted = false;
+
       if (heartbeatInterval) clearInterval(heartbeatInterval);
       if (uiInterval) clearInterval(uiInterval);
       try { osc.stop(); } catch (e) { }
       Matter.Events.off(engine, 'beforeUpdate', swarmAnimationListener);
+
       spawnNormalBalls();
+
       document.body.classList.remove('corrupted');
       document.body.style.filter = 'none';
-      document.body.style.background = '#14151f';
+      document.body.style.backgroundColor = '#14151f';
       document.body.style.backgroundImage = 'none';
+
+      // Restore the original browser tab name
+      document.title = originalTitle;
+
       if (render && render.options) render.options.background = '#14151f';
+
+      // --- NEW ADDITION: Restore the UI div, inputs, and canvas ---
+      const uiContainer = document.getElementById('ui');
+      if (uiContainer) uiContainer.style.opacity = "1";
+      if (render && render.canvas) render.canvas.style.opacity = "1";
+      document.querySelectorAll('input').forEach(el => el.style.opacity = "1");
+      // ------------------------------------------------------------
+
       allElements.forEach(el => {
         if (textRecoveryMap.has(el)) {
           el.innerText = textRecoveryMap.get(el);
-          el.style.color = ""; el.style.fontFamily = ""; el.style.opacity = "1";
+          el.style.color = "";
+          el.style.fontFamily = "";
+          el.style.opacity = "1";
         }
       });
-      if (collisionText) collisionText.innerText = "Collision Status: STABLE";
+
+      if (collisionText) {
+        collisionText.innerText = "Collision Status: STABLE";
+        collisionText.style.opacity = "1";
+      }
     }
   });
 
