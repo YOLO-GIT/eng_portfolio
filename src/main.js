@@ -390,10 +390,11 @@ voidBtn.addEventListener('click', () => {
 
       // --- NEW: DYNAMIC FAVICON CHANGE ---
       // This grabs the favicon link element from the head of your index.html
+      // --- FIXED DYNAMIC FAVICON CHANGE ---
       const faviconLink = document.querySelector("link[rel~='icon']");
       if (faviconLink) {
-        // Change the source to your corrupted asset sitting in the public folder
-        faviconLink.href = '/favicon-corrupted.png';
+        // Removed the leading slash so it targets your subfolder correctly
+        faviconLink.href = 'favicon-corrupted.png';
       }
 
       // --- TRANSFORM ALL FLOATING NUMBERS INTO THE NEW IMAGES ---
@@ -471,9 +472,11 @@ voidBtn.addEventListener('click', () => {
         document.title = originalTitle;
 
         // 2. RESET THE FAVICON BACK TO ORIGINAL
+        // --- FIXED FAVICON RESTORATION ---
         const faviconLink = document.querySelector("link[rel~='icon']");
         if (faviconLink) {
-          faviconLink.href = '/favicon.png'; // Restores your clean original tab logo
+          // Removed the leading slash here too
+          faviconLink.href = 'favicon.png';
         }
 
         if (render && render.options) render.options.background = '#14151f';
