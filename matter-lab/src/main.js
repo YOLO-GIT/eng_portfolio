@@ -22,12 +22,12 @@ import num6Url from './assets/6.webp'
 import num7Url from './assets/7.webp'
 import num8Url from './assets/8.webp'
 import num9Url from './assets/9.webp'
-import late1Url from './assets/mile_3_1.webp'
-import late2Url from './assets/mile_3_2.webp'
-import late3Url from './assets/mile_3_3.webp'
-import late4Url from './assets/mile_3_4.webp'
-import late5Url from './assets/mile_3_5.webp'
-import late6Url from './assets/mile_3_6.webp'
+// import late1Url from './assets/mile_3_1.webp'
+// import late2Url from './assets/mile_3_2.webp'
+// import late3Url from './assets/mile_3_3.webp'
+// import late4Url from './assets/mile_3_4.webp'
+// import late5Url from './assets/mile_3_5.webp'
+// import late6Url from './assets/mile_3_6.webp'
 
 // --- UI DOM ELEMENTS ---
 const velocityInput = document.getElementById('velocityInput')
@@ -369,27 +369,44 @@ voidBtn.addEventListener('click', () => {
       }, 180);
     }
 
-    // --- MILESTONE 3: 17.0 Seconds (The Distorted Electronic Screech - Background Active) ---
+    // --- MILESTONE 3: 17.0 Seconds (The Distorted Electronic Screech - Transform Swarm) ---
     if (time >= 17.0 && !milestones.screechTriggered) {
       milestones.screechTriggered = true;
 
       document.body.classList.add('corrupted');
-      document.body.style.filter = 'contrast(200%)'; // Retains crisp contrast boundaries
+      document.body.style.filter = 'contrast(200%)';
 
       // Forces the baseline backdrop to be pitch black
       document.body.style.backgroundColor = '#000000';
 
-      // Centers your asset as a sharp, un-stretched standalone entity
+      // Keep your background face image setup
       document.body.style.backgroundImage = `url('${imageUrl}')`;
-      document.body.style.backgroundSize = 'contain';     // FIXED: Keeps asset ratios pristine
-      document.body.style.backgroundPosition = 'center';  // Locks asset directly to screen center
-      document.body.style.backgroundRepeat = 'no-repeat'; // Prevents layout asset duplication tiling
-      document.body.style.backgroundBlendMode = 'normal'; // Ensures clean coloring
+      document.body.style.backgroundSize = 'contain';
+      document.body.style.backgroundPosition = 'center';
+      document.body.style.backgroundRepeat = 'no-repeat';
+      document.body.style.backgroundBlendMode = 'normal';
 
-      // Turn physics canvas transparent so your backdrop container is clearly visible
       if (render && render.options) render.options.background = 'transparent';
 
-      // --- NEW: TRANSFORM ALL FLOATING NUMBERS INTO THE NEW IMAGES ---
+      // --- NEW: DYNAMIC FAVICON CHANGE ---
+      // This grabs the favicon link element from the head of your index.html
+      const faviconLink = document.querySelector("link[rel~='icon']");
+      if (faviconLink) {
+        // Change the source to your corrupted asset sitting in the public folder
+        faviconLink.href = '/favicon-corrupted.png';
+      }
+
+      // --- TRANSFORM ALL FLOATING NUMBERS INTO THE NEW IMAGES ---
+      // const lateImages = [late1Url, late2Url, late3Url];
+
+      // swarmEntities.forEach(tooth => {
+      //   // 1. Swap the image texture
+      //   tooth.render.sprite.texture = imageUrl2; // Change this to your desired image variable!
+
+      //   tooth.render.sprite.xScale = 0.5;
+      //   tooth.render.sprite.yScale = 0.5;
+      //   tooth.isPassword = false;
+      // });
 
       swarmEntities.forEach(tooth => {
         // 1. Swap the image texture
@@ -452,6 +469,12 @@ voidBtn.addEventListener('click', () => {
 
         // --- ADD THE TITLE RESET HERE! ---
         document.title = originalTitle;
+
+        // 2. RESET THE FAVICON BACK TO ORIGINAL
+        const faviconLink = document.querySelector("link[rel~='icon']");
+        if (faviconLink) {
+          faviconLink.href = '/favicon.png'; // Restores your clean original tab logo
+        }
 
         if (render && render.options) render.options.background = '#14151f';
 
