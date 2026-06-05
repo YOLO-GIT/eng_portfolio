@@ -173,7 +173,7 @@ body.corrupted {
     animation: jitter 0.15s infinite;
 
     /* Loads your image directly from the public root */
-    background-image: url('../assets/bg_flesh.webp');
+    background-image: url('../assets/bg_flesh_1.webp');
     background-size: cover;
     background-position: center;
 

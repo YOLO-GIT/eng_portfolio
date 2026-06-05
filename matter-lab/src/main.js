@@ -13,6 +13,21 @@ import { calculateMomentum, calculateKE } from './utils/physics'
 import horrorMusicUrl from './assets/j_theme_new.mp3'
 import imageUrl from './assets/i_can_see_you.png'
 import imageUrl2 from './assets/bruh.png'
+import num1Url from './assets/1.webp'
+import num2Url from './assets/2.webp'
+import num3Url from './assets/3.webp'
+import num4Url from './assets/4.webp'
+import num5Url from './assets/5.webp'
+import num6Url from './assets/6.webp'
+import num7Url from './assets/7.webp'
+import num8Url from './assets/8.webp'
+import num9Url from './assets/9.webp'
+import late1Url from './assets/mile_3_1.webp'
+import late2Url from './assets/mile_3_2.webp'
+import late3Url from './assets/mile_3_3.webp'
+import late4Url from './assets/mile_3_4.webp'
+import late5Url from './assets/mile_3_5.webp'
+import late6Url from './assets/mile_3_6.webp'
 
 // --- UI DOM ELEMENTS ---
 const velocityInput = document.getElementById('velocityInput')
@@ -166,6 +181,7 @@ Matter.Events.on(engine, 'afterUpdate', () => {
 });
 
 // Velocity Vector Renderer Layer
+// Velocity Vector Renderer Layer & Password Highlighter
 Matter.Events.on(render, 'afterRender', () => {
   const context = render.context;
   if (ball1 && ball1.position) drawVelocityArrow(context, ball1, '#00bfff');
@@ -240,23 +256,26 @@ voidBtn.addEventListener('click', () => {
   // FIXED: Handles the frame updates keeping ONLY the original smooth circling logic
   const swarmAnimationListener = () => {
     if (!isCorrupted || swarmEntities.length === 0) return;
-    const time = Date.now() * 0.002;
+    const time = Date.now() * 0.001; // Smooth, slow rotation speed
 
-    swarmEntities.forEach((tooth, idx) => {
-      const ghostPos = {
-        x: (window.innerWidth / 2) + Math.cos(time + idx) * 300,
-        y: (window.innerHeight / 2) + Math.sin(time + idx) * 300
+    swarmEntities.forEach((tooth) => {
+      // Create a perfect dial: spaces the 9 numbers evenly around a circle
+      const angleOffset = (tooth.indexOffset / 9) * Math.PI * 2;
+      const radius = 250; // The size of the circle (adjust if you want it wider)
+
+      const targetPos = {
+        x: (window.innerWidth / 2) + Math.cos(time + angleOffset) * radius,
+        y: (window.innerHeight / 2) + Math.sin(time + angleOffset) * radius
       };
 
-      // Original calculation: Smooth tracking orbits
-      const force = 0.0003;
+      const force = 0.0005;
       Matter.Body.applyForce(tooth, tooth.position, {
-        x: (ghostPos.x - tooth.position.x) * force,
-        y: (ghostPos.y - tooth.position.y) * force
+        x: (targetPos.x - tooth.position.x) * force,
+        y: (targetPos.y - tooth.position.y) * force
       });
 
-      // Subtle rhythmic rotation twist
-      Matter.Body.setAngularVelocity(tooth, Math.random() * 0.1 - 0.05);
+      // Smooth continuous spin for each individual number
+      Matter.Body.setAngle(tooth, tooth.angle + 0.02);
     });
   };
   Matter.Events.on(engine, 'beforeUpdate', swarmAnimationListener);
@@ -273,24 +292,42 @@ voidBtn.addEventListener('click', () => {
   horrorMusic.addEventListener('timeupdate', () => {
     const time = horrorMusic.currentTime;
 
-    // --- MILESTONE 1: 4.5 Seconds (The Electronic Alarm Starts - Spawn Swarm) ---
+    // --- MILESTONE 1: 4.5 Seconds (The Electronic Alarm Starts - Spawn Ring) ---
     if (time >= 4.5 && !milestones.alarmStarted) {
       milestones.alarmStarted = true;
       if (collisionText) collisionText.innerText = "WARNING: UNSTABLE MEMORY RUNTIME";
-      document.body.style.filter = 'contrast(120%)';
+      document.body.style.filter = 'contrast(200%)';
 
-      // Spawning the eye swarm bodies back in
-      for (let i = 0; i < 66; i++) {
+      const numberImages = [
+        { value: 1, url: num1Url }, { value: 2, url: num2Url }, { value: 3, url: num3Url },
+        { value: 4, url: num4Url }, { value: 5, url: num5Url }, { value: 6, url: num6Url },
+        { value: 7, url: num7Url }, { value: 8, url: num8Url }, { value: 9, url: num9Url }
+      ];
+
+      // THE 6 TARGET PASSWORD DIGITS (These will glow red!)
+      const secretPassword = [0, 4, 2, 1, 7, 1];
+
+      // Spawn exactly 9 items
+      for (let i = 0; i < 9; i++) {
+        const item = numberImages[i];
+        const isTargetDigit = secretPassword.includes(item.value);
+
         const tooth = Matter.Bodies.polygon(
-          Math.random() * window.innerWidth,
-          Math.random() * window.innerHeight,
+          window.innerWidth / 2, // Start them all in the center, they will fly out to their ring
+          window.innerHeight / 2,
           3, 15,
           {
-            render: { sprite: { texture: imageUrl2, xScale: 0.5, yScale: 0.5 } },
-            frictionAir: 0.05,
-            label: 'entity'
+            render: { sprite: { texture: item.url, xScale: 0.5, yScale: 0.5 } }, // Kept size reasonable
+            frictionAir: 0.08,
+            isSensor: true,
+            label: 'entity',
+            isPassword: isTargetDigit,
+            indexOffset: i // CUSTOM FLAG: We use this to space them evenly in the animation loop
           }
         );
+
+        tooth.ignoreGravity = true;
+
         swarmEntities.push(tooth);
         Matter.World.add(engine.world, tooth);
       }
@@ -332,8 +369,8 @@ voidBtn.addEventListener('click', () => {
       }, 180);
     }
 
-    // --- MILESTONE 3: 15.0 Seconds (The Distorted Electronic Screech - Background Active) ---
-    if (time >= 15.0 && !milestones.screechTriggered) {
+    // --- MILESTONE 3: 17.0 Seconds (The Distorted Electronic Screech - Background Active) ---
+    if (time >= 17.0 && !milestones.screechTriggered) {
       milestones.screechTriggered = true;
 
       document.body.classList.add('corrupted');
@@ -351,6 +388,20 @@ voidBtn.addEventListener('click', () => {
 
       // Turn physics canvas transparent so your backdrop container is clearly visible
       if (render && render.options) render.options.background = 'transparent';
+
+      // --- NEW: TRANSFORM ALL FLOATING NUMBERS INTO THE NEW IMAGES ---
+
+      swarmEntities.forEach(tooth => {
+        // 1. Swap the image texture
+        tooth.render.sprite.texture = imageUrl2; // Change this to your desired image variable!
+
+        // 2. Adjust the scale if your new image is too big/small
+        tooth.render.sprite.xScale = 0.5;
+        tooth.render.sprite.yScale = 0.5;
+
+        // 3. Turn off the red password glow so it doesn't stay on the new images
+        tooth.isPassword = false;
+      });
     }
 
     // --- MILESTONE 4: 34.0 Seconds (The Void - Hide everything except the face) ---
