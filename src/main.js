@@ -10,7 +10,7 @@ import { updateStats } from './ui/stats'
 import { drawVelocityArrow } from './ui/velocityArrows'
 import { calculateMomentum, calculateKE } from './utils/physics'
 
-import horrorMusicUrl from './assets/j_theme_new.mp3'
+import horrorMusicUrl from './assets/j_theme.mp3'
 import imageUrl from './assets/i_can_see_you.png'
 import imageUrl2 from './assets/bruh.png'
 import num1Url from './assets/1.webp'
